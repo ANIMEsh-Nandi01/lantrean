@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lantern Sprite – Endless Run</title>
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Lobster+Two:ital,wght@1,700&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--gold:#ffd77a;--ink:#070a24}
@@ -15,8 +16,11 @@ h1,h2{font-family:'Lobster Two',cursive;font-style:italic;font-weight:700;color:
 h1{font-size:clamp(52px,12vw,110px)}h2{font-size:clamp(40px,8vw,80px)}
 .sub{margin:0;font-size:clamp(13px,2.2vw,17px);color:#cfe9ff;letter-spacing:.04em}
 .stat{font-family:Cinzel,serif;font-size:clamp(14px,2.2vw,20px);color:#fff3b0;margin:2px 0}
-button{font:600 19px Cinzel,serif;color:var(--gold);background:rgba(10,14,50,.72);border:2px solid var(--gold);border-radius:999px;padding:9px 38px;cursor:pointer;box-shadow:0 0 22px #ffb83a66,inset 0 0 14px #ffb83a33}
+button{font:600 19px Cinzel,serif;color:var(--gold);background:rgba(10,14,50,.72);border:2px solid var(--gold);border-radius:999px;padding:9px 38px;cursor:pointer;box-shadow:0 0 22px #ffb83a66,inset 0 0 14px #ffb83a33;transition:background .2s,box-shadow .2s,opacity .2s}
 button:hover,button:focus-visible{background:rgba(40,36,90,.88);outline:none;box-shadow:0 0 34px #ffb83acc}
+button:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none}
+.btn-reward{border-color:#4fd6ff;color:#a6edff;box-shadow:0 0 22px #4fd6ff66,inset 0 0 14px #4fd6ff33}
+.btn-reward:hover,.btn-reward:focus-visible{background:rgba(20,50,90,.9);box-shadow:0 0 34px #4fd6ffbb}
 .tips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:580px}
 .tip{background:rgba(10,12,40,.68);border:1px solid rgba(255,215,122,.3);border-radius:10px;padding:6px 13px;font-size:12px;color:#dbe8ff}
 .tip b{display:block;font-size:13px;margin-bottom:1px}
@@ -52,7 +56,11 @@ button:hover,button:focus-visible{background:rgba(40,36,90,.88);outline:none;box
   <h2 id="endTitle"></h2>
   <p class="sub" id="endSub"></p>
   <p id="endScore" class="stat"></p>
-  <button id="btnAgain">Run Again</button>
+  <div style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:6px;width:100%;max-width:320px">
+    <button id="btnRevive" class="btn-reward" style="width:100%;padding:10px 18px;font-size:15px">Watch Ad — Get 1 Extra Life</button>
+    <button id="btnAgain" style="width:100%;padding:9px 18px;font-size:15px">Run Again</button>
+  </div>
+  <p id="adStatus" class="sub" style="font-size:12px;color:#ffd77a;margin:2px 0;min-height:16px"></p>
 </div>
 
 <div id="pubar"></div>
@@ -183,13 +191,240 @@ const FF_CAT={
   WHITE: {col:'#e8e8ff',glow:'200,220,255',r:6,  pts:20,pw:'magnet', dur:5, lab:'MAGNET',  barC:'#e0e0ff'},
 };
 
+// ─── CrazyGames SDK v3 Integration Layer ───────────────────────────────────────
+let adPaused = false;
+let adAudioMuted = false;
+let cgMuted = false;
+
+function updateAudioVolume(){
+  if(master && AC){
+    const shouldMute = muted || cgMuted || adAudioMuted;
+    try {
+      master.gain.setValueAtTime(shouldMute ? 0 : 0.7, AC.currentTime);
+    } catch(e){}
+  }
+}
+
+function pauseForAd(){
+  adPaused = true;
+  adAudioMuted = true;
+  updateAudioVolume();
+}
+
+function resumeFromAd(){
+  adPaused = false;
+  adAudioMuted = false;
+  lastTs = performance.now(); // Reset frame delta timing
+  updateAudioVolume();
+}
+
+const CrazyGamesIntegration = (() => {
+  let ready = false;
+  let initializing = null;
+  let adInProgress = false;
+
+  async function init() {
+    if (ready) return true;
+    if (initializing) return initializing;
+
+    initializing = (async () => {
+      try {
+        if (!window.CrazyGames?.SDK) {
+          console.warn("CrazyGames SDK unavailable (offline or non-CrazyGames host).");
+          return false;
+        }
+
+        await window.CrazyGames.SDK.init();
+        const environment = window.CrazyGames.SDK.environment;
+
+        if (environment === "disabled") {
+          console.info("CrazyGames SDK disabled.");
+          return false;
+        }
+
+        ready = true;
+        console.log("CrazyGames SDK v3 initialized. Environment:", environment);
+
+        // Listen for CrazyGames platform audio mute settings
+        try {
+          if (window.CrazyGames.SDK.game?.addSettingsChangeListener) {
+            window.CrazyGames.SDK.game.addSettingsChangeListener((settings) => {
+              if (settings && typeof settings.muteAudio === 'boolean') {
+                cgMuted = settings.muteAudio;
+                updateAudioVolume();
+              }
+            });
+          }
+          if (window.CrazyGames.SDK.game?.settings?.muteAudio) {
+            cgMuted = true;
+            updateAudioVolume();
+          }
+        } catch (e) {
+          console.warn("CrazyGames settings change listener error:", e);
+        }
+
+        return true;
+      } catch (error) {
+        console.error("CrazyGames initialization failed:", error);
+        return false;
+      } finally {
+        initializing = null;
+      }
+    })();
+
+    return initializing;
+  }
+
+  function isReady() {
+    return ready;
+  }
+
+  function gameplayStart() {
+    if (!ready) return;
+    try {
+      window.CrazyGames.SDK.game.gameplayStart();
+    } catch (error) {
+      console.error("CrazyGames gameplayStart error:", error);
+    }
+  }
+
+  function gameplayStop() {
+    if (!ready) return;
+    try {
+      window.CrazyGames.SDK.game.gameplayStop();
+    } catch (error) {
+      console.error("CrazyGames gameplayStop error:", error);
+    }
+  }
+
+  function loadingStart() {
+    if (!ready) return;
+    try {
+      window.CrazyGames.SDK.game.loadingStart();
+    } catch (error) {
+      console.error("CrazyGames loadingStart error:", error);
+    }
+  }
+
+  function loadingStop() {
+    if (!ready) return;
+    try {
+      window.CrazyGames.SDK.game.loadingStop();
+    } catch (error) {
+      console.error("CrazyGames loadingStop error:", error);
+    }
+  }
+
+  function happyTime() {
+    if (!ready) return;
+    try {
+      window.CrazyGames.SDK.game.happytime();
+    } catch (error) {
+      console.error("CrazyGames happytime error:", error);
+    }
+  }
+
+  function requestRewardedAd(callbacks) {
+    if (adInProgress) {
+      console.warn("Ad already in progress.");
+      return;
+    }
+
+    if (!ready || !window.CrazyGames?.SDK?.ad?.requestAd) {
+      if (callbacks?.adError) {
+        callbacks.adError("SDK_UNAVAILABLE", "CrazyGames SDK is not available.");
+      }
+      return;
+    }
+
+    adInProgress = true;
+    try {
+      window.CrazyGames.SDK.ad.requestAd("rewarded", {
+        adStarted: () => {
+          pauseForAd();
+          if (callbacks?.adStarted) callbacks.adStarted();
+        },
+        adError: (error, errorData) => {
+          adInProgress = false;
+          resumeFromAd();
+          if (callbacks?.adError) callbacks.adError(error, errorData);
+        },
+        adFinished: () => {
+          adInProgress = false;
+          resumeFromAd();
+          if (callbacks?.adFinished) callbacks.adFinished();
+        }
+      });
+    } catch (err) {
+      adInProgress = false;
+      resumeFromAd();
+      if (callbacks?.adError) callbacks.adError("EXCEPTION", err);
+    }
+  }
+
+  function requestMidgameAd(callbacks) {
+    if (adInProgress) {
+      if (callbacks?.adError) callbacks.adError("IN_PROGRESS", "Ad already in progress.");
+      return;
+    }
+
+    if (!ready || !window.CrazyGames?.SDK?.ad?.requestAd) {
+      // Non-CrazyGames fallback: proceed immediately
+      if (callbacks?.adFinished) callbacks.adFinished();
+      return;
+    }
+
+    adInProgress = true;
+    try {
+      window.CrazyGames.SDK.ad.requestAd("midgame", {
+        adStarted: () => {
+          pauseForAd();
+          if (callbacks?.adStarted) callbacks.adStarted();
+        },
+        adError: (error, errorData) => {
+          adInProgress = false;
+          resumeFromAd();
+          if (callbacks?.adError) callbacks.adError(error, errorData);
+        },
+        adFinished: () => {
+          adInProgress = false;
+          resumeFromAd();
+          if (callbacks?.adFinished) callbacks.adFinished();
+        }
+      });
+    } catch (err) {
+      adInProgress = false;
+      resumeFromAd();
+      if (callbacks?.adFinished) callbacks.adFinished();
+    }
+  }
+
+  return {
+    init,
+    isReady,
+    gameplayStart,
+    gameplayStop,
+    loadingStart,
+    loadingStop,
+    happyTime,
+    requestRewardedAd,
+    requestMidgameAd
+  };
+})();
+
 // ─── Audio ────────────────────────────────────────────────────────────────────
 let AC,master,bus,noiseB,muted=false,nextBar=0,musicBar=0;
 const mf=m=>440*Math.pow(2,(m-69)/12);
 function initAudio(){
-  if(AC){if(AC.state==='suspended')AC.resume();return}
+  if(AC){
+    if(AC.state==='suspended')AC.resume();
+    updateAudioVolume();
+    return;
+  }
   try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch{return}
-  master=AC.createGain();master.gain.value=muted?0:.7;master.connect(AC.destination);
+  master=AC.createGain();
+  updateAudioVolume();
+  master.connect(AC.destination);
   bus=AC.createGain();bus.connect(master);
   const dl=AC.createDelay(1),fb=AC.createGain(),lp=AC.createBiquadFilter(),wet=AC.createGain();
   dl.delayTime.value=.44;fb.gain.value=.38;lp.type='lowpass';lp.frequency.value=2200;wet.gain.value=.38;
@@ -241,7 +476,13 @@ function sfx(n){
   else if(n==='over')[69,67,64,57].forEach((m,i)=>osc(mf(m),t0+i*.28,1.2,'triangle',.14,.02));
   else if(n==='biome')[72,76,79,84].forEach((m,i)=>osc(mf(m),t0+i*.09,.9,'sine',.09,.01));
 }
-function toggleSound(){muted=!muted;if(master)master.gain.value=muted?0:.7;$('sb').textContent='Sound: '+(muted?'off':'on');$('sb').blur();initAudio()}
+function toggleSound(){
+  muted=!muted;
+  $('sb').textContent='Sound: '+(muted?'off':'on');
+  $('sb').blur();
+  initAudio();
+  updateAudioVolume();
+}
 $('sb').onclick=toggleSound;
 addEventListener('pointerdown',initAudio,{once:true});
 addEventListener('keydown',initAudio,{once:true});
@@ -406,6 +647,7 @@ function collectFF(o){
     const[b0]=getBiomes();
     awakeText=`${b0.name.toUpperCase()} AWAKENS!`;
     score+=500;burstAnim=1.0;sfx('bonus');
+    CrazyGamesIntegration.happyTime(); // CrazyGames achievement celebration
     for(let i=0;i<35;i++){
       const a=Rnd(0,6.28),sp=Rnd(60,220);
       P.push({x:p.x,y:p.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:Rnd(.8,1.8),col:'#ffd77a',gravity:30,size:Rnd(2,4)});
@@ -420,12 +662,30 @@ function collectFF(o){
 
 function doGameOver(){
   gameState='over';sfx('over');
+  CrazyGamesIntegration.gameplayStop();
   if(score>highScore){highScore=score;localStorage.setItem('ls_er_hs',highScore)}
   $('endTitle').textContent='Your Light Went Out';
   $('endSub').textContent=`Flew ${(worldX/1000).toFixed(2)} km \u00b7 ${got} fireflies gathered`;
   $('endScore').textContent=`Score ${Math.round(scoreDisp).toLocaleString()}  \u00b7  Best ${highScore.toLocaleString()}`;
+  $('btnRevive').disabled=false;
+  $('btnAgain').disabled=false;
+  $('adStatus').textContent='';
   $('end').classList.remove('hide');
   $('pubar').innerHTML='';
+}
+
+function grantExtraLife(){
+  if(gameState!=='over')return;
+  hp=1;
+  inv=2.5; // temporary invincibility
+  en=Math.max(en,0.6); // restore light energy
+  // Clear any hazardous obstacles right at player position to ensure fair revive
+  obstacles=obstacles.filter(o=>o.x>p.x+130||o.x<p.x-130);
+  gameState='play';
+  $('end').classList.add('hide');
+  $('adStatus').textContent='';
+  sfx('bonus');
+  CrazyGamesIntegration.gameplayStart();
 }
 
 // ─── Update ───────────────────────────────────────────────────────────────────
@@ -1175,20 +1435,84 @@ function draw(){
 
 // ─── Game flow ────────────────────────────────────────────────────────────────
 function startGame(){
-  initAudio();sfx('click');resetGame();gameState='play';
-  $('menu').classList.add('hide');$('end').classList.add('hide');
+  initAudio();
+  sfx('click');
+  resetGame();
+  gameState='play';
+  $('menu').classList.add('hide');
+  $('end').classList.add('hide');
+  $('adStatus').textContent='';
+  CrazyGamesIntegration.gameplayStart();
 }
 $('btnPlay').onclick=startGame;
-$('btnAgain').onclick=startGame;
+
+$('btnRevive').onclick=()=>{
+  if(gameState!=='over')return;
+  $('btnRevive').disabled=true;
+  $('btnAgain').disabled=true;
+  $('adStatus').textContent='Requesting rewarded ad...';
+
+  CrazyGamesIntegration.requestRewardedAd({
+    adStarted:()=>{
+      $('adStatus').textContent='Ad in progress...';
+    },
+    adError:(err,data)=>{
+      $('btnRevive').disabled=false;
+      $('btnAgain').disabled=false;
+      $('adStatus').textContent='No ad available. Run Again to restart.';
+      console.warn("Rewarded ad failed:",err,data);
+    },
+    adFinished:()=>{
+      $('btnRevive').disabled=false;
+      $('btnAgain').disabled=false;
+      $('adStatus').textContent='';
+      grantExtraLife();
+    }
+  });
+};
+
+$('btnAgain').onclick=()=>{
+  $('btnAgain').disabled=true;
+  $('btnRevive').disabled=true;
+  $('adStatus').textContent='';
+
+  // Request midgame ad before restart
+  CrazyGamesIntegration.requestMidgameAd({
+    adStarted:()=>{},
+    adError:()=>{
+      $('btnAgain').disabled=false;
+      $('btnRevive').disabled=false;
+      startGame();
+    },
+    adFinished:()=>{
+      $('btnAgain').disabled=false;
+      $('btnRevive').disabled=false;
+      startGame();
+    }
+  });
+};
+
 if(highScore>0)$('menuHS').textContent='Best: '+highScore.toLocaleString();
 
 // ─── Loop ─────────────────────────────────────────────────────────────────────
 let lastTs=0;
 function loop(ts){
   const dt=Math.min(.05,(ts-lastTs)/1000||0);
-  lastTs=ts;update(dt);draw();requestAnimationFrame(loop);
+  lastTs=ts;
+  if(!adPaused){
+    update(dt);
+  }
+  draw();
+  requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+
+// Initialize CrazyGames SDK v3 on page load
+(async()=>{
+  CrazyGamesIntegration.loadingStart();
+  await CrazyGamesIntegration.init();
+  CrazyGamesIntegration.loadingStop();
+})();
 </script>
 </body>
 </html>
