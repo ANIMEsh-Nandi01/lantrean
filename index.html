@@ -38,11 +38,11 @@ button:hover,button:focus-visible{background:rgba(40,36,90,.88);outline:none;box
   <div class="tips">
     <div class="tip"><b>↑ ↓ &nbsp;/&nbsp; W S</b>Fly up &amp; down</div>
     <div class="tip"><b>Space</b>Light burst</div>
-    <div class="tip"><b style="color:#ffd77a">●</b>&nbsp;Gold · +Points</div>
+    <div class="tip"><b style="color:#ffd77a">●</b>&nbsp;Gold · +Points &amp; Dawn</div>
     <div class="tip"><b style="color:#4fd6ff">●</b>&nbsp;Blue · Speed</div>
     <div class="tip"><b style="color:#7fff7f">●</b>&nbsp;Green · Shield</div>
     <div class="tip"><b style="color:#cf9fff">●</b>&nbsp;Purple · 2× Score</div>
-    <div class="tip"><b style="color:#e8e8ff">●</b>&nbsp;White · Magnet</div>
+    <div class="tip"><b style="color:#e8e8ff">●</b>&nbsp;White · Super Magnet</div>
   </div>
   <p id="menuHS" class="stat"></p>
 </div>
@@ -78,7 +78,7 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
     this.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);this.lineTo(rx+rw,ry+rh-rr);
     this.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);this.lineTo(rx+rr,ry+rh);
     this.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);this.lineTo(rx,ry+rr);
-    this.arcTo(rx,ry,rx+rr,ry,rr);this.closePath();
+    this.arcTo(rx,ry+rr,rx+rr,ry,rr);this.closePath();
   };
 }
 
@@ -87,23 +87,90 @@ const Rnd=(a,b)=>a+Math.random()*(b-a);
 const rn=n=>{const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s)};
 const mix=(a,b,k)=>a+(b-a)*k;
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const interpColor=(c0,c1,t)=>[mix(c0[0],c1[0],t),mix(c0[1],c1[1],t),mix(c0[2],c1[2],t)];
+function mixColorStr(s0,s1,t){
+  const p0=s0.split(',').map(Number),p1=s1.split(',').map(Number);
+  return `${Math.round(mix(p0[0],p1[0],t))},${Math.round(mix(p0[1],p1[1],t))},${Math.round(mix(p0[2],p1[2],t))}`;
+}
 
-// ─── Biome catalogue ──────────────────────────────────────────────────────────
+// ─── Biome catalogue with Night & Dawn Palettes ──────────────────────────────
 const BIOMES=[
-  // Enchanted Forest
-  {name:'Enchanted Forest',skyH:[235,250],skyL:[8,22],skyS:60,gH:250,gS:40,gL:6,tH:[250,320],mush:[190,285,320,45],  archH:250,archS:30,archL:10},
-  // Crystal Caverns
-  {name:'Crystal Caverns', skyH:[260,280],skyL:[6,20],skyS:65,gH:270,gS:35,gL:5,tH:[270,290],mush:[200,240,260,180], archH:270,archS:35,archL:8},
-  // Volcanic Wastes
-  {name:'Volcanic Wastes', skyH:[10,25],  skyL:[7,20],skyS:70,gH:15, gS:55,gL:6,tH:[15,35],  mush:[10,30,45,355],    archH:15, archS:50,archL:7},
-  // Frozen Tundra
-  {name:'Frozen Tundra',   skyH:[200,220],skyL:[10,26],skyS:50,gH:210,gS:45,gL:8,tH:[205,215],mush:[200,210,220,185],archH:210,archS:40,archL:9},
-  // Celestial Realm
-  {name:'Celestial Realm', skyH:[280,310],skyL:[11,28],skyS:60,gH:290,gS:50,gL:10,tH:[285,315],mush:[280,300,320,260],archH:290,archS:45,archL:11},
+  // 1. Enchanted Forest
+  {
+    name:'Enchanted Forest',
+    skyNight:[[235,60,8],  [250,55,14], [260,60,20]],
+    skyDawn: [[265,60,22], [320,55,45], [18,60,62]],
+    gNight:  [250,40,6],
+    gDawn:   [140,42,18],
+    treeNight:[250,240],
+    treeDawn: [320,335],
+    archH:[250,270], archL:[10,32],
+    mush:[190,285,320,45],
+    sunNight:['#e8f0ff','200,220,255'],
+    sunDawn: ['#ffd9a0','255,190,120']
+  },
+  // 2. Crystal Caverns
+  {
+    name:'Crystal Caverns',
+    skyNight:[[260,65,6],  [275,60,12], [285,65,18]],
+    skyDawn: [[280,68,20], [330,62,44], [195,80,58]],
+    gNight:  [270,35,5],
+    gDawn:   [185,55,18],
+    treeNight:[270,260],
+    treeDawn: [315,195],
+    archH:[270,280], archL:[8,28],
+    mush:[200,240,260,180],
+    sunNight:['#e0d8ff','190,170,255'],
+    sunDawn: ['#9fe6ff','120,230,255']
+  },
+  // 3. Volcanic Wastes
+  {
+    name:'Volcanic Wastes',
+    skyNight:[[10,70,7],   [20,65,13],  [30,70,18]],
+    skyDawn: [[25,75,20],  [350,70,42], [42,90,62]],
+    gNight:  [15,55,6],
+    gDawn:   [30,65,17],
+    treeNight:[15,10],
+    treeDawn: [350,38],
+    archH:[15,25], archL:[7,26],
+    mush:[10,30,45,355],
+    sunNight:['#ffb0aa','255,100,70'],
+    sunDawn: ['#ffea88','255,190,60']
+  },
+  // 4. Frozen Tundra
+  {
+    name:'Frozen Tundra',
+    skyNight:[[200,50,9],  [215,50,15], [225,50,22]],
+    skyDawn: [[195,60,22], [280,50,42], [50,85,62]],
+    gNight:  [210,45,7],
+    gDawn:   [195,50,20],
+    treeNight:[205,215],
+    treeDawn: [275,175],
+    archH:[210,220], archL:[9,28],
+    mush:[200,210,220,185],
+    sunNight:['#d8f4ff','180,225,255'],
+    sunDawn: ['#fff4b8','255,230,140']
+  },
+  // 5. Celestial Realm
+  {
+    name:'Celestial Realm',
+    skyNight:[[280,60,10], [300,58,16], [320,60,24]],
+    skyDawn: [[295,70,25], [335,65,48], [48,90,66]],
+    gNight:  [290,50,9],
+    gDawn:   [280,55,22],
+    treeNight:[285,300],
+    treeDawn: [330,45],
+    archH:[290,310], archL:[10,30],
+    mush:[280,300,320,260],
+    sunNight:['#e8dcff','210,180,255'],
+    sunDawn: ['#ffe8a0','255,210,110']
+  }
 ];
-function lerBiome(key,b0,b1,bl){return typeof b0[key]==='number'?mix(b0[key],b1[key],bl):b0[key]}
+
 function getBiomes(){
-  const i=Math.floor(biomePr)%BIOMES.length,j=(i+1)%BIOMES.length,bl=biomePr%1;
+  const i=Math.floor(biomePr)%BIOMES.length;
+  const j=(i+1)%BIOMES.length;
+  const bl=biomePr%1;
   return [BIOMES[i],BIOMES[j],bl];
 }
 
@@ -147,7 +214,7 @@ function nz(t0,dur,freq,vol){
 }
 const CHORDS=[[[45,57,60,64],[41,53,57,60],[48,55,60,64],[43,55,59,62]],[[48,60,64,67],[53,60,65,69],[55,62,67,71],[45,57,64,69]]];
 const MELODY=[[69,72,74,76,79,81,84],[72,74,76,79,81,84,88]];
-let biomePr=0,diffPr=0; // used by music scheduler
+let biomePr=0,diffPr=0;
 function schedMusic(){
   if(!AC||AC.state!=='running')return;
   while(nextBar<AC.currentTime+.8){
@@ -190,8 +257,9 @@ let camY=0,camYv=0; // smooth vertical camera
 let hp=3,inv=0,burstCd=0,burstAnim=0,en=1;
 let powers={speed:0,shield:0,multi:0,magnet:0};
 let F=[],P=[],TR=[];      // fireflies, particles, trail
-let obstacles=[];          // all active obstacles + formation enemies
+let obstacles=[];          // active obstacles + formation enemies
 let ffTimer=0,obsTimer=0;
+let awakeTimer=0,awakeText='';
 
 function resetGame(){
   gTime=0;worldX=0;score=0;scoreDisp=0;got=0;
@@ -201,6 +269,7 @@ function resetGame(){
   powers={speed:0,shield:0,multi:0,magnet:0};
   F=[];P=[];TR=[];obstacles=[];
   ffTimer=0;obsTimer=0;
+  awakeTimer=0;awakeText='';
   $('pubar').innerHTML='';
 }
 
@@ -227,9 +296,21 @@ function glow(ctx,px,py,r,col,a){
 function particle(px,py,n,col){
   for(let i=0;i<n;i++){
     const a=Rnd(0,6.283),s=Rnd(40,170);
-    P.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s-20,l:Rnd(.45,1.1),col});
+    P.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s-20,l:Rnd(.45,1.1),col,gravity:90,size:2.8});
   }
 }
+
+// ─── Dynamic Environmental Light / Dawn Progress ─────────────────────────────
+function getEnvLight(){
+  if(gameState==='menu')return 0;
+  const cyclePr=(got%20)/20;
+  const master=Math.min(.2,got*.005);
+  const boost=burstAnim*.5+(powers.multi>0?.12:0)+(powers.speed>0?.1:0);
+  return clamp(cyclePr*.82+master+boost,0,1);
+}
+
+// ─── Lantern Light Radius (Grows with Fireflies, Energy & Bursts) ─────────────
+const lr=()=>(85+Math.min(got%20,20)*6+Math.min(got,50)*1.8)*(.55+.45*en)*(powers.speed>0?1.25:1)*(1+burstAnim*.85);
 
 // ─── Power-up bar UI ──────────────────────────────────────────────────────────
 function updatePUBar(){
@@ -269,13 +350,11 @@ function spawnObstacle(){
 }
 
 function makeObstacle(type){
-  const gy=H-60;
   const gapH=clamp(165-diffPr*90,60,165);
   if(type==='wall'){
     const gapY=Rnd(H*.22,H*.72);
     obstacles.push({type,x:W+30,w:24,gapY,gapH,passed:false,dead:false});
   } else if(type==='mwall'){
-    // gap oscillates vertically
     const gapY=Rnd(H*.3,H*.66);
     obstacles.push({type,x:W+30,w:24,gapH,gapY,gapYv:Rnd(50,100)*(Math.random()<.5?1:-1),passed:false,dead:false});
   } else if(type==='spike'){
@@ -283,12 +362,11 @@ function makeObstacle(type){
     const sH=Rnd(55,115)+diffPr*35;
     obstacles.push({type,x:W+40,w:28,fromTop,sH,hitH:sH*.78,passed:false,dead:false});
   } else if(type==='formation'){
-    // group of mini-shadowlings in a pattern
     const pats=[
-      [{dx:0,dy:0},{dx:90,dy:-55},{dx:90,dy:55}],           // V shape
-      [{dx:0,dy:-60},{dx:0,dy:0},{dx:0,dy:60}],             // vertical line
-      [{dx:0,dy:0},{dx:110,dy:0},{dx:55,dy:-65}],           // triangle
-      [{dx:0,dy:-45},{dx:75,dy:0},{dx:150,dy:-45},{dx:75,dy:-90}], // diamond
+      [{dx:0,dy:0},{dx:90,dy:-55},{dx:90,dy:55}],
+      [{dx:0,dy:-60},{dx:0,dy:0},{dx:0,dy:60}],
+      [{dx:0,dy:0},{dx:110,dy:0},{dx:55,dy:-65}],
+      [{dx:0,dy:-45},{dx:75,dy:0},{dx:150,dy:-45},{dx:75,dy:-90}],
     ];
     const pat=pats[Math.floor(Math.random()*pats.length)];
     const cy=Rnd(H*.2,H*.75);
@@ -299,12 +377,11 @@ function makeObstacle(type){
 // ─── Gameplay actions ─────────────────────────────────────────────────────────
 function doLightBurst(){
   if(gameState!=='play'||burstCd>0)return;
-  burstCd=4.5;burstAnim=1;sfx('burst');
+  burstCd=4.5;burstAnim=1;en=Math.min(1,en+.2);sfx('burst');
   powers.shield=Math.max(powers.shield,1.0);
-  // Destroy nearby formation obstacles
   for(const o of obstacles){
-    if(o.type==='formation'&&!o.dead&&Math.hypot(o.x-p.x,(o.cy||H*.5)-p.y)<320){
-      o.dead=true;particle(o.x,o.cy,14,'#ffd77a');
+    if(o.type==='formation'&&!o.dead&&Math.hypot(o.x-p.x,(o.cy||H*.5)-p.y)<340){
+      o.dead=true;particle(o.x,o.cy,16,'#ffd77a');
     }
   }
   updatePUBar();
@@ -321,15 +398,31 @@ function collectFF(o){
   const cat=FF_CAT[o.type];if(!cat)return;
   const multi=powers.multi>0?2:1;
   score+=cat.pts*multi;got++;
-  if(cat.pw){powers[cat.pw]=cat.dur;updatePUBar();sfx('bonus')}else sfx('get');
-  o.dead=true;particle(o.x,o.y,10,cat.col);
+  en=Math.min(1,en+.28); // replenish lantern energy like in v1!
+
+  // Full Dawn Awakening Milestone
+  if(got%20===0){
+    awakeTimer=3.8;
+    const[b0]=getBiomes();
+    awakeText=`${b0.name.toUpperCase()} AWAKENS!`;
+    score+=500;burstAnim=1.0;sfx('bonus');
+    for(let i=0;i<35;i++){
+      const a=Rnd(0,6.28),sp=Rnd(60,220);
+      P.push({x:p.x,y:p.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:Rnd(.8,1.8),col:'#ffd77a',gravity:30,size:Rnd(2,4)});
+    }
+  } else if(cat.pw){
+    powers[cat.pw]=cat.dur;updatePUBar();sfx('bonus');
+  } else {
+    sfx('get');
+  }
+  o.dead=true;particle(o.x,o.y,12,cat.col);
 }
 
 function doGameOver(){
   gameState='over';sfx('over');
   if(score>highScore){highScore=score;localStorage.setItem('ls_er_hs',highScore)}
   $('endTitle').textContent='Your Light Went Out';
-  $('endSub').textContent=`Flew ${(worldX/1000).toFixed(2)} km \u00b7 ${got} fireflies`;
+  $('endSub').textContent=`Flew ${(worldX/1000).toFixed(2)} km \u00b7 ${got} fireflies gathered`;
   $('endScore').textContent=`Score ${Math.round(scoreDisp).toLocaleString()}  \u00b7  Best ${highScore.toLocaleString()}`;
   $('end').classList.remove('hide');
   $('pubar').innerHTML='';
@@ -339,17 +432,21 @@ function doGameOver(){
 function update(dt){
   gTime+=dt;
 
-  // Particles always update
-  for(const q of P){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=90*dt;q.l-=dt}
+  // Particle physics
+  for(const q of P){
+    q.x+=q.vx*dt;q.y+=q.vy*dt;
+    q.vy+=(q.gravity||90)*dt;
+    q.l-=dt;
+  }
   P=P.filter(q=>q.l>0);
 
   if(gameState==='menu'){p.x=W*.18;p.y=H*.5+Math.sin(gTime*1.5)*14;return}
   if(gameState!=='play')return;
 
-  // ── Difficulty ramp ────────────────────────────────────────────────────────
+  // ── Difficulty & Speed ramp ────────────────────────────────────────────────
   diffPr=clamp(worldX/38000,0,1);
   const spd=200*(1+diffPr*2.2)*(powers.speed>0?1.45:1);
-  speed+=(spd-speed)*Math.min(1,dt*3); // smooth speed transitions
+  speed+=(spd-speed)*Math.min(1,dt*3);
   worldX+=speed*dt;
 
   // Biome: switch every 8000px
@@ -358,7 +455,7 @@ function update(dt){
   if(newBI!==prevBiomeIdx&&prevBiomeIdx!==-1)sfx('biome');
   prevBiomeIdx=newBI;
 
-  // Score: distance + firefly points
+  // Score
   score+=speed*dt*.012;
   scoreDisp+=(score-scoreDisp)*Math.min(1,dt*4);
 
@@ -366,7 +463,9 @@ function update(dt){
   inv=Math.max(0,inv-dt);
   burstCd=Math.max(0,burstCd-dt);
   burstAnim=Math.max(0,burstAnim-dt*2.5);
-  en=Math.min(1,en+dt*.005);
+  en=Math.max(.12,en-dt*.022); // energy slowly dims if not collecting fireflies!
+  if(awakeTimer>0)awakeTimer=Math.max(0,awakeTimer-dt);
+
   let puChanged=false;
   for(const k in powers)if(powers[k]>0){powers[k]=Math.max(0,powers[k]-dt);puChanged=true}
   if(puChanged)updatePUBar();
@@ -377,15 +476,32 @@ function update(dt){
   if(keys.ArrowDown||keys.s)ay=1;
   if(pointerY!==null){const dy=pointerY-p.y;if(Math.abs(dy)>12)ay=clamp(dy/65,-1,1)}
   p.vy+=ay*1350*dt;
-  p.vy*=Math.pow(.009,dt); // strong damping for responsive feel
+  p.vy*=Math.pow(.009,dt);
   p.y=clamp(p.y+p.vy*dt,36,H-72);
 
-  // ── Smooth vertical camera (parallax feel) ─────────────────────────────────
+  // ── Smooth vertical camera parallax ────────────────────────────────────────
   const camTarget=(p.y/H-.5)*.06*H;
   camYv+=(camTarget-camY)*7*dt;camYv*=Math.pow(.08,dt);camY+=camYv*dt;
 
   // ── Trail ──────────────────────────────────────────────────────────────────
   TR.push({x:p.x,y:p.y});if(TR.length>28)TR.shift();
+
+  // ── Ambient drifting spores / motes in atmosphere ───────────────────────────
+  if(Math.random()<.22){
+    const[b0]=getBiomes();
+    const hs=b0.mush;
+    const hu=hs[Math.floor(Math.random()*hs.length)];
+    P.push({
+      x:W+Rnd(10,60),
+      y:Rnd(H*.1,H-75),
+      vx:-speed*Rnd(.7,1.2),
+      vy:Rnd(-15,15),
+      l:Rnd(1.4,3.2),
+      col:`hsla(${hu},90%,75%,${Rnd(.35,.75)})`,
+      gravity:0,
+      size:Rnd(1.2,2.5)
+    });
+  }
 
   // ── Spawn fireflies ────────────────────────────────────────────────────────
   ffTimer-=dt;
@@ -404,13 +520,18 @@ function update(dt){
     if(Math.random()<clamp(diffPr*.5+.18,.15,.9))spawnObstacle();
   }
 
-  // ── Firefly update ─────────────────────────────────────────────────────────
-  const magnetR=powers.magnet>0?200:0;
+  // ── Firefly update (Attracted to character's light!) ────────────────────────
+  const playerRadius=lr();
   for(const o of F){
     o.x-=speed*dt*.72;
     o.y=o.by+Math.sin(gTime*1.9+o.ph)*22;
     const dx=p.x-o.x,dy=p.y-o.y,d=Math.hypot(dx,dy);
-    if(magnetR>0&&d<magnetR&&d>1){o.x+=dx/d*220*dt;o.y+=dy/d*220*dt;o.by=o.y}
+    if(powers.magnet>0&&d<240){
+      o.x+=dx/d*240*dt;o.y+=dy/d*240*dt;o.by=o.y;
+    } else if(d<playerRadius*.58){
+      // Fireflies gently pulled into player's lantern light glow!
+      o.x+=dx/d*135*dt;o.by+=dy/d*135*dt;o.y=o.by;
+    }
     if(d<30)collectFF(o);
   }
   F=F.filter(o=>!o.dead&&o.x>-70);
@@ -419,14 +540,10 @@ function update(dt){
   for(const o of obstacles){
     if(o.dead)continue;
     o.x-=speed*dt;
-
-    // Moving wall gap oscillation
     if(o.type==='mwall'){
       o.gapY+=o.gapYv*dt;
       if(o.gapY<H*.12+o.gapH/2||o.gapY>H*.88-o.gapH/2)o.gapYv*=-1;
     }
-
-    // Collision – trigger once when obstacle crosses player x
     if(!o.passed){
       if(o.type==='wall'||o.type==='mwall'){
         if(o.x<=p.x&&o.x+o.w>=p.x){
@@ -449,86 +566,192 @@ function update(dt){
         if(o.x+220<p.x)o.passed=true;
       }
     }
-
     if(o.x<-350)o.dead=true;
   }
   obstacles=obstacles.filter(o=>!o.dead);
 }
 
-// ─── Draw: background ─────────────────────────────────────────────────────────
+// ─── Draw: Background (Transforms Night -> Glorious Dawn with Character Light) ─
+function getSkyColor(b0,b1,bl,pr,stopIdx){
+  const c0=interpColor(b0.skyNight[stopIdx],b0.skyDawn[stopIdx],pr);
+  const c1=interpColor(b1.skyNight[stopIdx],b1.skyDawn[stopIdx],pr);
+  const cf=interpColor(c0,c1,bl);
+  return `hsl(${cf[0]}, ${cf[1]}%, ${cf[2]}%)`;
+}
+
 function drawBG(){
   const[b0,b1,bl]=getBiomes();
-  const sh0=mix(b0.skyH[0],b1.skyH[0],bl),sh1=mix(b0.skyH[1],b1.skyH[1],bl);
-  const sl0=mix(b0.skyL[0],b1.skyL[0],bl),sl1=mix(b0.skyL[1],b1.skyL[1],bl);
-  const ss=mix(b0.skyS,b1.skyS,bl);
+  const pr=getEnvLight();
+
+  // 1. Sky Gradient: Transitions from dark night into glorious glowing dawn!
   const sg=x.createLinearGradient(0,0,0,H);
-  sg.addColorStop(0,`hsl(${sh0},${ss}%,${sl0}%)`);
-  sg.addColorStop(.55,`hsl(${mix(sh0,sh1,.55)},${ss}%,${mix(sl0,sl1,.55)}%)`);
-  sg.addColorStop(1,`hsl(${sh1},${ss}%,${sl1}%)`);
+  sg.addColorStop(0,getSkyColor(b0,b1,bl,pr,0));
+  sg.addColorStop(.55,getSkyColor(b0,b1,bl,pr,1));
+  sg.addColorStop(1,getSkyColor(b0,b1,bl,pr,2));
   x.fillStyle=sg;x.fillRect(0,0,W,H);
 
-  // Stars (fade with bright biomes)
-  const starAlpha=Math.max(0,1-sl0*.06);
+  // 2. Stars: Twinkle at night, dissolve as player brings dawn!
   for(let i=0;i<65;i++){
-    x.globalAlpha=starAlpha*(.3+.7*rn(i+9))*(.55+.45*Math.sin(gTime*1.5+i));
-    x.fillStyle='#fff';x.fillRect(rn(i)*W,rn(i+55)*H*.55,1.5,1.5);
+    const starAlpha=(.3+.7*rn(i+9))*(.55+.45*Math.sin(gTime*1.5+i))*(1-pr*.88);
+    if(starAlpha>.02){
+      x.globalAlpha=starAlpha;x.fillStyle='#fff';
+      x.fillRect(rn(i)*W,rn(i+55)*H*.55,1.5,1.5);
+    }
   }
   x.globalAlpha=1;
 
-  // Moon/sun (shifts with cam)
+  // 3. Celestial Body: Cold Moon -> Radiant Golden Sun at Dawn
   const mx2=W*.83,my2=H*.14-camY*.4;
+  const sunR=mix(24,38,pr);
+  const sunGlowR=mix(90,150,pr);
+  const glowCol=pr>.48?mixColorStr(b0.sunDawn[1],b1.sunDawn[1],bl):mixColorStr(b0.sunNight[1],b1.sunNight[1],bl);
+  const bodyCol=pr>.48?(b0.sunDawn[0]):(b0.sunNight[0]);
+
   x.globalCompositeOperation='lighter';
-  glow(x,mx2,my2,110,'rgba(200,220,255,A)',.38);
+  glow(x,mx2,my2,sunGlowR,`rgba(${glowCol},A)`,.35+pr*.35);
   x.globalCompositeOperation='source-over';
-  x.fillStyle='#e8f0ff';x.beginPath();x.arc(mx2,my2,26,0,7);x.fill();
+  x.fillStyle=bodyCol;x.beginPath();x.arc(mx2,my2,sunR,0,7);x.fill();
+
+  // Sunbeams slanting through the canopy at dawn
+  if(pr>.38){
+    x.save();x.globalCompositeOperation='lighter';
+    const beamAlpha=(pr-.38)*.14;
+    for(let i=-2;i<=2;i++){
+      x.fillStyle=`rgba(255, 235, 160, ${beamAlpha})`;
+      x.beginPath();
+      x.moveTo(mx2+i*36,my2);
+      x.lineTo(mx2+i*150-260,H);
+      x.lineTo(mx2+i*150-180,H);
+      x.closePath();x.fill();
+    }
+    x.restore();
+  }
 
   const gy=H-60-camY*.25;
-  drawTreeLayer(.18,200,.65,b0,b1,bl,gy);
-  drawTreeLayer(.44,250,.52,b0,b1,bl,gy+8);
 
-  // Ruined arches – biome-tinted
-  const aH=mix(b0.archH,b1.archH,bl),aS=mix(b0.archS,b1.archS,bl),aL=mix(b0.archL,b1.archL,bl);
+  // 4. Parallax Tree Layers (Canopy light & saturation bloom with character light!)
+  drawTreeLayer(.18,200,.65,b0,b1,bl,pr,gy,0);
+  drawTreeLayer(.44,250,.52,b0,b1,bl,pr,gy+8,1);
+
+  // 5. Ruined Arches with Glowing Runes that ignite when player is close!
+  const aH0=mix(b0.archH[0],b0.archH[1],pr),aH1=mix(b1.archH[0],b1.archH[1],pr);
+  const archH=mix(aH0,aH1,bl);
+  const aL0=mix(b0.archL[0],b0.archL[1],pr),aL1=mix(b1.archL[0],b1.archL[1],pr);
+  const archL=mix(aL0,aL1,bl);
+
   const aoff=worldX*.72,a0=Math.floor(aoff/940);
-  x.strokeStyle=`hsl(${aH},${aS}%,${aL*1.9}%)`;x.lineWidth=14;
+  x.strokeStyle=`hsl(${archH}, 30%, ${archL}%)`;x.lineWidth=14;
+
   for(let i=a0;i<a0+4;i++){
     const ax=i*940-aoff+rn(i)*290+270;
     x.beginPath();x.moveTo(ax-56,gy);x.lineTo(ax-56,gy-92);x.arc(ax,gy-92,56,Math.PI,0);x.lineTo(ax+56,gy);x.stroke();
+
+    // Runic crystals on arch ignite when sprite flies nearby!
+    const distArch=Math.abs(ax-p.x);
+    const archLit=Math.max(0,1-distArch/230);
+    if(archLit>.05||pr>.5||burstAnim>0){
+      const runeAlpha=clamp(archLit*.85+pr*.45+burstAnim*.7,0,1);
+      x.save();x.globalCompositeOperation='lighter';
+      glow(x,ax,gy-148,26,'rgba(255,215,120,A)',runeAlpha);
+      x.fillStyle=`rgba(255, 235, 140, ${runeAlpha})`;
+      x.beginPath();x.arc(ax,gy-148,4.5+archLit*2.5,0,7);x.fill();
+      x.fillStyle=`rgba(140, 230, 255, ${runeAlpha*.75})`;
+      x.fillRect(ax-58,gy-60,4,10);x.fillRect(ax+54,gy-60,4,10);
+      x.restore();
+    }
   }
 
-  // Ground strip
-  const gH2=mix(b0.gH,b1.gH,bl),gS2=mix(b0.gS,b1.gS,bl),gL2=mix(b0.gL,b1.gL,bl);
-  x.fillStyle=`hsl(${gH2},${gS2}%,${gL2}%)`;x.fillRect(0,gy,W,H-gy+4);
+  // 6. Ground Strip (Night ink -> Dawn forest moss / golden terrain)
+  const gCol0=interpColor(b0.gNight,b0.gDawn,pr);
+  const gCol1=interpColor(b1.gNight,b1.gDawn,pr);
+  const gCol=interpColor(gCol0,gCol1,bl);
+  x.fillStyle=`hsl(${gCol[0]}, ${gCol[1]}%, ${gCol[2]}%)`;
+  x.fillRect(0,gy,W,H-gy+4);
+
+  // 7. Ground Light Reflection Cast by Player Sprite
+  const heightAboveGround=gy-p.y;
+  if(heightAboveGround>0&&heightAboveGround<240){
+    const refl=1-heightAboveGround/240;
+    x.save();x.globalCompositeOperation='lighter';
+    const rw=(55+(1-refl)*35)*(powers.speed>0?1.35:1);
+    const colStr=powers.shield>0?'rgba(100,255,100,A)':(powers.speed>0?'rgba(80,210,255,A)':'rgba(255,225,120,A)');
+    glow(x,p.x,gy,rw,colStr,refl*.52);
+    x.restore();
+  }
 }
 
-function drawTreeLayer(par,gap,hh,b0,b1,bl,base){
+function drawTreeLayer(par,gap,hh,b0,b1,bl,pr,base,layerIdx){
   const off=worldX*par,i0=Math.floor(off/gap);
-  const li=mix(mix(b0.skyL[0],b0.skyL[1],.5),mix(b1.skyL[0],b1.skyL[1],.5),bl)*.85;
-  const tH=mix(b0.tH[0],b1.tH[0],bl),tH2=mix(b0.tH[1],b1.tH[1],bl);
+  const tH0=mix(b0.treeNight[layerIdx],b0.treeDawn[layerIdx],pr);
+  const tH1=mix(b1.treeNight[layerIdx],b1.treeDawn[layerIdx],pr);
+  const tH=mix(tH0,tH1,bl);
+  const li=mix(9,34,pr)*(layerIdx===0?.75:1.0);
+  const sat=mix(36,66,pr);
+
   for(let i=i0;i<i0+Math.ceil(W/gap)+3;i++){
     const X=i*gap-off+rn(i*3+par*10)*gap*.5,h=H*hh*(.55+rn(i+par*7)*.65),w=gap*.14;
-    x.fillStyle=`hsl(${tH},34%,${li*.65}%)`;x.fillRect(X-w/2,base-h,w,h+4);
-    x.fillStyle=`hsl(${tH2},40%,${li}%)`;
-    for(let k=0;k<5;k++){x.beginPath();x.arc(X+(rn(i*5+k)-.5)*gap*.82,base-h+(rn(i*9+k)-.28)*h*.26,gap*(.2+rn(i+k*2)*.16),0,7);x.fill()}
+    x.fillStyle=`hsl(${tH}, 32%, ${li*.65}%)`;x.fillRect(X-w/2,base-h,w,h+4);
+    x.fillStyle=`hsl(${tH}, ${sat}%, ${li}%)`;
+    for(let k=0;k<5;k++){
+      x.beginPath();
+      x.arc(X+(rn(i*5+k)-.5)*gap*.82,base-h+(rn(i*9+k)-.28)*h*.26,gap*(.2+rn(i+k*2)*.16),0,7);
+      x.fill();
+    }
   }
 }
 
+// ─── Draw: Mushrooms (Blooms & Releases Spores when Player is Close!) ─────────
 function drawMushrooms(){
-  const[b0,,bl]=getBiomes();
+  const[b0]=getBiomes();
   const gy=H-60-camY*.25;
   const off=worldX,i0=Math.floor(off/120);
   const hs=b0.mush;
+  const pr=getEnvLight();
+
   for(let i=i0;i<i0+Math.ceil(W/120)+2;i++){
     const X=i*120-off+rn(i)*80,h=10+rn(i+4)*16,hu=hs[Math.floor(rn(i+8)*4)];
-    x.globalCompositeOperation='lighter';glow(x,X,gy-h,44,`hsla(${hu},90%,60%,A)`,.38);x.globalCompositeOperation='source-over';
-    x.fillStyle=`hsl(${hu},30%,80%)`;x.fillRect(X-2,gy-h,4,h+4);
-    x.fillStyle=`hsl(${hu},85%,62%)`;x.beginPath();x.ellipse(X,gy-h,9+h*.3,6+h*.2,0,Math.PI,0);x.fill();
+    const distToPlayer=Math.hypot(X-p.x,(gy-h)-p.y);
+    const playerRadius=lr();
+    const isLitByPlayer=distToPlayer<playerRadius*.9;
+    const litAmount=isLitByPlayer?Math.max(0,1-distToPlayer/(playerRadius*.9)):0;
+
+    const glowRad=(44+litAmount*28+burstAnim*24)*(1+pr*.2);
+    const glowAlpha=.36+litAmount*.5+burstAnim*.4+pr*.18;
+
+    x.globalCompositeOperation='lighter';
+    glow(x,X,gy-h,glowRad,`hsla(${hu},95%,65%,A)`,glowAlpha);
+    x.globalCompositeOperation='source-over';
+
+    x.fillStyle=`hsl(${hu},30%,${mix(78,96,litAmount)}%)`;
+    x.fillRect(X-2,gy-h,4,h+4);
+
+    x.fillStyle=`hsl(${hu},${mix(85,100,litAmount)}%,${mix(60,76,litAmount)}%)`;
+    x.beginPath();
+    const capW=(9+h*.3)*(1+litAmount*.35);
+    const capH=(6+h*.2)*(1+litAmount*.3);
+    x.ellipse(X,gy-h,capW,capH,0,Math.PI,0);
+    x.fill();
+
+    // Spore puff when character lantern illuminates mushroom!
+    if(isLitByPlayer&&Math.random()<.08){
+      P.push({
+        x:X+Rnd(-8,8),y:gy-h,
+        vx:Rnd(-25,25)-speed*.25,
+        vy:Rnd(-45,-95),
+        l:Rnd(.5,1.1),
+        col:`hsla(${hu},95%,75%,.9)`,
+        gravity:-20,
+        size:Rnd(1.5,2.8)
+      });
+    }
   }
 }
 
-// ─── Draw: obstacles ──────────────────────────────────────────────────────────
+// ─── Draw: Obstacles ──────────────────────────────────────────────────────────
 function drawObstacles(){
   const[b0,b1,bl]=getBiomes();
-  const bH=mix(b0.gH,b1.gH,bl),bS=mix(b0.gS,b1.gS,bl),bL=mix(b0.gL,b1.gL,bl);
+  const pr=getEnvLight();
+  const bH=mix(b0.gDawn[0],b1.gDawn[0],bl);
   const gy=H-60;
 
   for(const o of obstacles){
@@ -536,16 +759,14 @@ function drawObstacles(){
 
     if(o.type==='wall'||o.type==='mwall'){
       const gTop=o.gapY-o.gapH/2,gBot=o.gapY+o.gapH/2;
-      x.fillStyle=`hsl(${bH},${bS+14}%,${bL+5}%)`;
+      x.fillStyle=`hsl(${bH},${mix(25,45,pr)}%,${mix(10,24,pr)}%)`;
       x.fillRect(o.x,0,o.w,gTop);
       x.fillRect(o.x,gBot,o.w,H-gBot);
-      // Glowing gap edges
       const rc=o.type==='mwall'?'160,80,255':'80,150,255';
       x.globalCompositeOperation='lighter';
       glow(x,o.x+o.w/2,gTop,24,`rgba(${rc},A)`,.65);
       glow(x,o.x+o.w/2,gBot,24,`rgba(${rc},A)`,.65);
       x.globalCompositeOperation='source-over';
-      // Animated gap hint arrow
       x.save();x.globalAlpha=.28+Math.sin(gTime*5)*.14;
       x.strokeStyle='rgba(255,220,80,.9)';x.lineWidth=2;
       const mx3=o.x-14,my3=o.gapY;
@@ -554,7 +775,7 @@ function drawObstacles(){
     }
 
     else if(o.type==='spike'){
-      x.fillStyle=`hsl(${bH+18},${bS+20}%,${bL+7}%)`;
+      x.fillStyle=`hsl(${bH+18},${mix(30,55,pr)}%,${mix(12,28,pr)}%)`;
       if(o.fromTop){
         x.beginPath();x.moveTo(o.x-16,0);x.lineTo(o.x+16,0);x.lineTo(o.x,o.sH);x.closePath();x.fill();
         x.globalCompositeOperation='lighter';glow(x,o.x,o.sH,22,'rgba(210,80,255,A)',.65);x.globalCompositeOperation='source-over';
@@ -585,22 +806,18 @@ function drawShadowling(sx,sy){
   x.restore();
 }
 
-// ─── Draw: fireflies ──────────────────────────────────────────────────────────
+// ─── Draw: Fireflies ──────────────────────────────────────────────────────────
 function drawFireflies(){
   for(const o of F){
     const cat=FF_CAT[o.type];if(!cat)continue;
-    // Glow
     x.globalCompositeOperation='lighter';
-    glow(x,o.x,o.y,34,`rgba(${cat.glow},A)`,.72);
+    glow(x,o.x,o.y,34,`rgba(${cat.glow},A)`,.75);
     x.globalCompositeOperation='source-over';
-    // Wings
     x.save();x.globalAlpha=.42;x.fillStyle='rgba(200,240,255,.75)';
     x.beginPath();x.ellipse(o.x-6,o.y-4+Math.sin(gTime*28+o.ph)*2,5,2.3,-.5,0,7);x.fill();
     x.beginPath();x.ellipse(o.x+6,o.y-4+Math.sin(gTime*28+o.ph+1.1)*2,5,2.3,.5,0,7);x.fill();
     x.restore();
-    // Body
     x.fillStyle=cat.col;x.beginPath();x.arc(o.x,o.y,cat.r,0,7);x.fill();
-    // Bonus label tag
     if(o.type!=='GOLD'){
       x.save();x.font='bold 7.5px Cinzel,serif';x.textAlign='center';
       x.fillStyle='rgba(255,255,255,.68)';x.fillText(cat.lab.split(' ')[0].substring(0,3),o.x,o.y-cat.r-4);
@@ -609,33 +826,31 @@ function drawFireflies(){
   }
 }
 
-// ─── Draw: player sprite ──────────────────────────────────────────────────────
+// ─── Draw: Player Sprite (Aura glows & scales with gathered light) ───────────
 function drawSprite(px,py,sc){
   x.save();x.translate(px,py);x.scale(sc,sc);
-  // Outer light aura
   x.globalCompositeOperation='lighter';
-  glow(x,0,0,95,'rgba(120,220,255,A)',.5);
+  glow(x,0,0,95*(.7+.3*en),'rgba(120,220,255,A)',.55);
   if(powers.shield>0)glow(x,0,0,58,'rgba(100,255,100,A)',.68);
-  if(powers.speed>0) glow(x,0,0,72,'rgba(80,180,255,A)',.32);
+  if(powers.speed>0) glow(x,0,0,72,'rgba(80,180,255,A)',.35);
   x.globalCompositeOperation='source-over';
-  // Wings
+
   x.fillStyle='rgba(190,240,255,.92)';
   x.beginPath();x.moveTo(-6,-14);x.quadraticCurveTo(-34,-46,-42,-8);x.quadraticCurveTo(-24,-14,-6,-8);x.fill();
   x.beginPath();x.moveTo(2,-16);x.quadraticCurveTo(-6,-48,-22,-36);x.quadraticCurveTo(-8,-26,2,-10);x.fill();
-  // Body
+
   const bg=x.createRadialGradient(0,-4,2,0,0,26);bg.addColorStop(0,'#fff');bg.addColorStop(1,'#9fe6ff');
   x.fillStyle=bg;x.beginPath();x.ellipse(0,0,24,20,0,0,7);x.fill();
-  // Eyes
+
   x.fillStyle='#10204a';x.beginPath();x.arc(9,-3,4.4,0,7);x.fill();x.beginPath();x.arc(-3,-3,3.6,0,7);x.fill();
   x.fillStyle='#fff';x.beginPath();x.arc(10.4,-4.6,1.5,0,7);x.fill();x.beginPath();x.arc(-2,-4.4,1.2,0,7);x.fill();
   x.fillStyle='rgba(255,140,190,.5)';x.beginPath();x.ellipse(14,5,4,2.6,0,0,7);x.fill();
-  // Speed streaks
+
   if(powers.speed>0){
     x.save();
     for(let i=0;i<5;i++){x.globalAlpha=Rnd(.12,.42);x.strokeStyle='#4fd6ff';x.lineWidth=1.5;x.beginPath();x.moveTo(Rnd(-12,4),Rnd(-11,11));x.lineTo(Rnd(-72,-28),Rnd(-8,8));x.stroke()}
     x.restore();
   }
-  // Shield ring
   if(powers.shield>0){
     x.save();x.strokeStyle=`rgba(100,255,100,${.38+Math.sin(gTime*8)*.18})`;x.lineWidth=2.5;
     x.beginPath();x.arc(0,0,36,0,7);x.stroke();x.restore();
@@ -643,7 +858,7 @@ function drawSprite(px,py,sc){
   x.restore();
 }
 
-// ─── Draw: heart icon ─────────────────────────────────────────────────────────
+// ─── Draw: Heart icon ─────────────────────────────────────────────────────────
 function heart(hx,hy,s,on){
   x.save();x.translate(hx,hy);x.scale(s/14,s/14);
   x.beginPath();x.moveTo(0,8);x.bezierCurveTo(-18,-4,-7,-16,0,-6);x.bezierCurveTo(7,-16,18,-4,0,8);
@@ -654,7 +869,9 @@ function heart(hx,hy,s,on){
 
 // ─── Draw: HUD ────────────────────────────────────────────────────────────────
 function drawHUD(){
-  // ── Score top-center ────────────────────────────────────────────────────────
+  const pr=getEnvLight();
+
+  // Score top-center
   x.save();x.shadowColor='rgba(255,210,80,.75)';x.shadowBlur=20;
   x.font='bold 34px Cinzel,serif';x.textAlign='center';x.fillStyle='#ffd77a';
   x.fillText(Math.round(scoreDisp).toLocaleString(),W/2,44);
@@ -662,70 +879,76 @@ function drawHUD(){
   x.font='500 11px Cinzel,serif';x.textAlign='center';x.fillStyle='rgba(185,215,255,.6)';
   x.fillText((worldX/1000).toFixed(2)+' km',W/2,60);
 
-  // Biome name (gentle fade on transition)
+  // Biome name
   const[b0,,bl]=getBiomes();
   x.font='italic 10.5px Cinzel,serif';x.textAlign='center';
-  x.fillStyle=`rgba(220,200,255,${.25+bl*.15})`;
+  x.fillStyle=`rgba(220,200,255,${.35+bl*.15})`;
   x.fillText(b0.name.toUpperCase(),W/2,76);
 
-  // ── Left: hearts + burst arc + energy ──────────────────────────────────────
+  // Left: hearts + burst arc + energy slots
   for(let i=0;i<3;i++)heart(36+i*34,34,16,i<hp);
-  // Burst recharge arc
   const bpct=1-Math.min(1,burstCd/4.5);
   x.strokeStyle=bpct>=1?'rgba(255,200,80,.88)':'rgba(255,255,255,.22)';x.lineWidth=2.5;
   x.beginPath();x.arc(36,70,13,-.5*Math.PI,-.5*Math.PI+bpct*Math.PI*2);x.stroke();
   if(bpct<1){x.font='7px Cinzel,serif';x.textAlign='center';x.fillStyle='rgba(200,200,200,.5)';x.fillText('BURST',36,73)}
-  // Energy slots
   for(let i=0;i<5;i++){
     const v=Math.max(0,Math.min(1,en*5-i));
     x.fillStyle='rgba(255,255,255,.12)';x.fillRect(58+i*20,63,17,14);
     x.fillStyle=i<4?'#ffd77a':'#9fe6ff';x.fillRect(58+i*20,63,17*v,14);
   }
 
-  // ── Right: firefly HUD panel ────────────────────────────────────────────────
-  const hw=212,hh2=72,hr=14,hx0=W-hw-14,hy=12;
+  // Right: Firefly & Dawn Progress HUD Panel
+  const hw=216,hh2=74,hr=14,hx0=W-hw-14,hy=12;
   x.save();x.shadowColor='rgba(255,185,50,.6)';x.shadowBlur=24;
   x.beginPath();x.roundRect(hx0,hy,hw,hh2,hr);
   x.fillStyle='rgba(5,7,36,.84)';x.fill();
   x.strokeStyle='rgba(255,215,122,.52)';x.lineWidth=1.5;x.stroke();
   x.restore();
+
   const shimG=x.createLinearGradient(hx0,hy,hx0+hw,hy);
   shimG.addColorStop(0,'rgba(255,220,100,0)');shimG.addColorStop(.5,'rgba(255,220,100,.62)');shimG.addColorStop(1,'rgba(255,220,100,0)');
   x.strokeStyle=shimG;x.lineWidth=1;x.beginPath();x.moveTo(hx0+hr,hy+1);x.lineTo(hx0+hw-hr,hy+1);x.stroke();
-  // Firefly icon
+
+  // Glowing Firefly icon
   x.save();x.globalCompositeOperation='lighter';glow(x,hx0+20,hy+22,20,'rgba(255,220,80,A)',.95);x.restore();
   x.fillStyle='#fffbe0';x.beginPath();x.arc(hx0+20,hy+22,4.5,0,7);x.fill();
   x.save();x.globalAlpha=.48;x.fillStyle='rgba(180,240,255,.85)';
   x.beginPath();x.ellipse(hx0+14,hy+19,5,2.5,-.6,0,7);x.fill();
   x.beginPath();x.ellipse(hx0+27,hy+19,5,2.5,.6,0,7);x.fill();
   x.restore();
-  // Label + count
-  x.font='500 9.5px Cinzel,serif';x.textAlign='left';x.fillStyle='rgba(190,215,255,.7)';x.fillText('FIREFLIES',hx0+36,hy+15);
-  x.save();x.shadowColor='#ffd060';x.shadowBlur=14;
-  x.font='bold 26px Cinzel,serif';x.fillStyle='#ffd77a';x.fillText(got+'',hx0+36,hy+42);x.restore();
+
+  // Label: Dawn Awakening Cycle
+  const dawnCyclePr=(got%20)/20;
+  x.font='500 9px Cinzel,serif';x.textAlign='left';x.fillStyle='rgba(190,215,255,.7)';
+  x.fillText(`FIREFLIES · DAWN ${Math.round(dawnCyclePr*100)}%`,hx0+36,hy+15);
+
+  // Big count
+  x.save();x.shadowColor=pr>=.9?'#88ffaa':'#ffd060';x.shadowBlur=14;
+  x.font='bold 26px Cinzel,serif';x.fillStyle=pr>=.9?'#aaffcc':'#ffd77a';
+  x.fillText(got+'',hx0+36,hy+42);x.restore();
   const gw=x.measureText(got+'').width;
-  x.fillStyle='rgba(255,255,255,.28)';x.font='bold 17px Cinzel,serif';x.fillText('\u00d7',hx0+44+gw,hy+40);
-  // Biome progress bar
-  const bpr=(worldX%8000)/8000;
+  x.fillStyle='rgba(255,255,255,.28)';x.font='bold 17px Cinzel,serif';x.fillText('/ 20',hx0+44+gw,hy+40);
+
+  // Dawn Progress Bar
   const bx=hx0+10,by2=hy+hh2-15,bw=hw-20,bh=8;
   x.fillStyle='rgba(255,255,255,.09)';x.beginPath();x.roundRect(bx,by2,bw,bh,4);x.fill();
-  if(bpr>0){
+  if(dawnCyclePr>0){
     const pg=x.createLinearGradient(bx,by2,bx+bw,by2);
-    pg.addColorStop(0,`hsl(${mix(48,160,diffPr)},100%,60%)`);
-    pg.addColorStop(1,`hsl(${mix(55,280,diffPr)},100%,72%)`);
-    x.fillStyle=pg;x.beginPath();x.roundRect(bx,by2,Math.max(bh,bw*bpr),bh,4);x.fill();
-    x.save();x.globalCompositeOperation='lighter';glow(x,bx+bw*bpr,by2+bh/2,13,'rgba(255,235,100,A)',.85);x.restore();
+    pg.addColorStop(0,`hsl(${mix(45,140,dawnCyclePr)},100%,60%)`);
+    pg.addColorStop(1,`hsl(${mix(55,300,dawnCyclePr)},100%,72%)`);
+    x.fillStyle=pg;x.beginPath();x.roundRect(bx,by2,Math.max(bh,bw*dawnCyclePr),bh,4);x.fill();
+    x.save();x.globalCompositeOperation='lighter';glow(x,bx+bw*dawnCyclePr,by2+bh/2,13,'rgba(255,235,100,A)',.85);x.restore();
   }
   for(let m=1;m<=3;m++){const mx3=bx+bw*(m/4);x.fillStyle='rgba(255,255,255,.2)';x.fillRect(mx3-.5,by2,1,bh)}
 
-  // ── Difficulty stars (bottom-right) ─────────────────────────────────────────
+  // Difficulty stars (bottom-right)
   const stars=Math.min(5,Math.ceil(diffPr*5));
   if(stars>0){
     x.font='13px serif';x.textAlign='right';x.fillStyle='rgba(255,200,80,.72)';
     x.fillText('\u2605'.repeat(stars),W-14,H-14);
   }
 
-  // ── Active power-up bottom-center badges ────────────────────────────────────
+  // Active power-up badges
   const activePW=Object.entries(powers).filter(([,v])=>v>0);
   if(activePW.length){
     const pw_w=activePW.length*52,pw_x0=(W-pw_w)/2;
@@ -740,27 +963,60 @@ function drawHUD(){
       x.fillStyle=cat.barC;x.fillRect(pw_x0+i*52+4,H-27,38*(v/cat.dur),4);
     }
   }
+
+  // Celebratory Dawn Awakening Toast (V1 return of Dawn celebration!)
+  if(awakeTimer>0){
+    const alpha=Math.min(1,awakeTimer);
+    x.save();x.globalAlpha=alpha;
+    x.shadowColor='rgba(255,220,100,0.85)';x.shadowBlur=24;
+    x.font='bold 22px Cinzel,serif';x.textAlign='center';x.fillStyle='#fff4ba';
+    x.fillText(awakeText,W/2,H*.22);
+    x.font='500 12px Cinzel,serif';x.fillStyle='rgba(220,240,255,0.85)';
+    x.fillText('+500 DAWN AWAKENING BONUS',W/2,H*.22+22);
+    x.restore();
+  }
 }
 
 // ─── Main draw loop ───────────────────────────────────────────────────────────
 function draw(){
   x.clearRect(0,0,W,H);
+  const pr=getEnvLight();
 
-  // Background (with subtle vertical camera parallax)
+  // Background
   x.save();x.translate(0,-camY);
   drawBG();
   x.restore();
 
-  // Light/fog mask via offscreen canvas
+  // Light/Fog Darkness Mask via offscreen canvas (Clears as character gathers light!)
   lx.globalCompositeOperation='source-over';lx.clearRect(0,0,W,H);
-  const darkness=gameState==='menu'?.55:Math.max(.35,.82-got*.004);
+  const darkness=gameState==='menu'?.55:Math.max(.18,.84-pr*.58-burstAnim*.5);
   lx.fillStyle=`rgba(2,3,18,${darkness})`;lx.fillRect(0,0,W,H);
   lx.globalCompositeOperation='destination-out';
-  const lr=80+Math.min(got,45)*3.8;
-  const lg=lx.createRadialGradient(p.x,p.y,0,p.x,p.y,lr);
-  lg.addColorStop(0,'rgba(0,0,0,1)');lg.addColorStop(.55,'rgba(0,0,0,.76)');lg.addColorStop(1,'rgba(0,0,0,0)');
-  lx.fillStyle=lg;lx.fillRect(p.x-lr,p.y-lr,lr*2,lr*2);
-  for(const o of F){const cat=FF_CAT[o.type];if(cat)glow(lx,o.x,o.y,56,'rgba(0,0,0,A)',.87)}
+
+  // Player's Lantern Glow Cuts Hole through Darkness Fog
+  const r=gameState==='menu'?240:lr();
+  const lg=lx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+  lg.addColorStop(0,'rgba(0,0,0,1)');
+  lg.addColorStop(.55,'rgba(0,0,0,0.76)');
+  lg.addColorStop(1,'rgba(0,0,0,0)');
+  lx.fillStyle=lg;lx.fillRect(p.x-r,p.y-r,r*2,r*2);
+
+  // Each Firefly Cuts Out Warm Light in Darkness
+  for(const o of F){
+    const cat=FF_CAT[o.type];
+    if(cat)glow(lx,o.x,o.y,60,'rgba(0,0,0,A)',.9);
+  }
+
+  // Light Burst Vaporizes Darkness in Massive Expanding Shockwave
+  if(burstAnim>0){
+    const br=60+(1-burstAnim)*(Math.max(W,H)*.8);
+    const bg2=lx.createRadialGradient(p.x,p.y,0,p.x,p.y,br);
+    bg2.addColorStop(0,'rgba(0,0,0,1)');
+    bg2.addColorStop(.7,`rgba(0,0,0,${burstAnim})`);
+    bg2.addColorStop(1,'rgba(0,0,0,0)');
+    lx.fillStyle=bg2;lx.fillRect(p.x-br,p.y-br,br*2,br*2);
+  }
+
   x.drawImage(L,0,0,W,H);
 
   drawMushrooms();
@@ -768,12 +1024,15 @@ function draw(){
   drawFireflies();
 
   // Trail
-  const psc=Math.min(1.55,1+got*.01);
+  const psc=Math.min(1.6,1+got*.015);
   x.globalCompositeOperation='lighter';
-  TR.forEach((q,i)=>{const k=i/TR.length;glow(x,q.x-8,q.y+6,26*k*psc,'rgba(110,210,255,A)',.47*k)});
+  TR.forEach((q,i)=>{
+    const k=i/TR.length;
+    glow(x,q.x-8,q.y+6,26*k*psc,'rgba(110,210,255,A)',.47*k);
+  });
   x.globalCompositeOperation='source-over';
 
-  // Sprite (blink when invincible)
+  // Sprite (blinks when invincible)
   const blink=inv>0&&Math.floor(gTime*13)%2;
   if(!blink)drawSprite(p.x,p.y,psc);
 
@@ -783,9 +1042,13 @@ function draw(){
     x.beginPath();x.arc(p.x,p.y,40+(1-burstAnim)*310,0,7);x.stroke();
   }
 
-  // Particles
+  // Particles & Floating Spores
   x.globalCompositeOperation='lighter';
-  for(const q of P){x.globalAlpha=Math.max(0,q.l);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,2.8,0,7);x.fill()}
+  for(const q of P){
+    x.globalAlpha=Math.max(0,q.l);
+    x.fillStyle=q.col;
+    x.beginPath();x.arc(q.x,q.y,q.size||2.8,0,7);x.fill();
+  }
   x.globalAlpha=1;x.globalCompositeOperation='source-over';
 
   if(gameState==='play'||gameState==='over')drawHUD();
