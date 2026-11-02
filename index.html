@@ -898,48 +898,110 @@ function drawHUD(){
   }
 
   // Right: Firefly & Dawn Progress HUD Panel
-  const hw=216,hh2=74,hr=14,hx0=W-hw-14,hy=12;
-  x.save();x.shadowColor='rgba(255,185,50,.6)';x.shadowBlur=24;
+  const hw=200,hh2=66,hr=16,hx0=W-hw-16,hy=14;
+  
+  // Outer subtle dark drop glow
+  x.save();
+  x.shadowColor='rgba(0,0,0,0.6)';x.shadowBlur=16;x.shadowOffsetY=4;
   x.beginPath();x.roundRect(hx0,hy,hw,hh2,hr);
-  x.fillStyle='rgba(5,7,36,.84)';x.fill();
-  x.strokeStyle='rgba(255,215,122,.52)';x.lineWidth=1.5;x.stroke();
+  x.fillStyle='rgba(6,9,36,0.78)';x.fill();
   x.restore();
 
-  const shimG=x.createLinearGradient(hx0,hy,hx0+hw,hy);
-  shimG.addColorStop(0,'rgba(255,220,100,0)');shimG.addColorStop(.5,'rgba(255,220,100,.62)');shimG.addColorStop(1,'rgba(255,220,100,0)');
-  x.strokeStyle=shimG;x.lineWidth=1;x.beginPath();x.moveTo(hx0+hr,hy+1);x.lineTo(hx0+hw-hr,hy+1);x.stroke();
+  // Glassmorphic panel with gradient border
+  x.save();
+  const borderG=x.createLinearGradient(hx0,hy,hx0+hw,hy+hh2);
+  borderG.addColorStop(0,'rgba(255,225,140,0.7)');
+  borderG.addColorStop(0.5,'rgba(140,210,255,0.4)');
+  borderG.addColorStop(1,'rgba(255,180,90,0.65)');
+  x.beginPath();x.roundRect(hx0,hy,hw,hh2,hr);
+  x.strokeStyle=borderG;x.lineWidth=1.5;x.stroke();
 
-  // Glowing Firefly icon
-  x.save();x.globalCompositeOperation='lighter';glow(x,hx0+20,hy+22,20,'rgba(255,220,80,A)',.95);x.restore();
-  x.fillStyle='#fffbe0';x.beginPath();x.arc(hx0+20,hy+22,4.5,0,7);x.fill();
-  x.save();x.globalAlpha=.48;x.fillStyle='rgba(180,240,255,.85)';
-  x.beginPath();x.ellipse(hx0+14,hy+19,5,2.5,-.6,0,7);x.fill();
-  x.beginPath();x.ellipse(hx0+27,hy+19,5,2.5,.6,0,7);x.fill();
+  // Interior backdrop gradient
+  const bgG=x.createLinearGradient(hx0,hy,hx0,hy+hh2);
+  bgG.addColorStop(0,'rgba(18,24,65,0.85)');
+  bgG.addColorStop(1,'rgba(5,7,28,0.92)');
+  x.fillStyle=bgG;x.fill();
   x.restore();
 
-  // Label: Dawn Awakening Cycle
+  // Shimmer crest line at the top
+  const shimG=x.createLinearGradient(hx0+hr,hy+1,hx0+hw-hr,hy+1);
+  shimG.addColorStop(0,'rgba(255,240,160,0)');
+  shimG.addColorStop(0.3,'rgba(255,245,190,0.8)');
+  shimG.addColorStop(0.7,'rgba(160,230,255,0.75)');
+  shimG.addColorStop(1,'rgba(255,240,160,0)');
+  x.strokeStyle=shimG;x.lineWidth=1.5;x.beginPath();x.moveTo(hx0+hr,hy+1.5);x.lineTo(hx0+hw-hr,hy+1.5);x.stroke();
+
+  // Glowing animated Firefly orb icon
+  const iconPulse=Math.sin(gTime*3.5)*1.5;
+  x.save();x.globalCompositeOperation='lighter';
+  glow(x,hx0+22,hy+24,20+iconPulse,'rgba(255,220,90,A)',0.95);
+  x.restore();
+  
+  // Firefly golden core
+  x.fillStyle='#fffce6';x.beginPath();x.arc(hx0+22,hy+24,4.5,0,7);x.fill();
+  
+  // Translucent wings flutter
+  x.save();x.globalAlpha=0.65;x.fillStyle='rgba(195,245,255,0.9)';
+  const wingFlap=Math.sin(gTime*24)*1.8;
+  x.beginPath();x.ellipse(hx0+16,hy+21+wingFlap*0.4,5.2,2.6,-0.55+wingFlap*0.08,0,7);x.fill();
+  x.beginPath();x.ellipse(hx0+28,hy+21-wingFlap*0.4,5.2,2.6,0.55-wingFlap*0.08,0,7);x.fill();
+  x.restore();
+
+  // Section Label: "FIREFLIES"
+  x.font='600 9.5px Cinzel,serif';x.textAlign='left';x.fillStyle='rgba(195,220,255,0.75)';
+  x.letterSpacing='0.08em';
+  x.fillText('FIREFLIES',hx0+38,hy+16);
+
+  // Big stylized Firefly count (Clean, no /20)
+  x.save();
+  const countColor=pr>=0.9?'#aaffcc':'#ffd77a';
+  x.shadowColor=pr>=0.9?'rgba(120,255,180,0.85)':'rgba(255,210,80,0.8)';
+  x.shadowBlur=16;
+  x.font='bold 24px Cinzel,serif';x.fillStyle=countColor;
+  x.fillText(got.toLocaleString(),hx0+38,hy+39);
+  x.restore();
+
+  // Subtle multiplier badge or collected icon tag next to number
+  if(powers.multi>0){
+    x.save();
+    x.font='bold 10px Cinzel,serif';
+    x.fillStyle='#cf9fff';
+    x.shadowColor='#cf9fff';x.shadowBlur=8;
+    const numW=x.measureText(got.toLocaleString()).width;
+    x.fillText('2×',hx0+44+numW,hy+36);
+    x.restore();
+  }
+
+  // Smooth Dawn Progress Fill Bar
   const dawnCyclePr=(got%20)/20;
-  x.font='500 9px Cinzel,serif';x.textAlign='left';x.fillStyle='rgba(190,215,255,.7)';
-  x.fillText(`FIREFLIES · DAWN ${Math.round(dawnCyclePr*100)}%`,hx0+36,hy+15);
+  const bx=hx0+12,by2=hy+hh2-14,bw=hw-24,bh=6;
+  
+  // Bar track background
+  x.fillStyle='rgba(255,255,255,0.08)';
+  x.beginPath();x.roundRect(bx,by2,bw,bh,3);x.fill();
+  x.strokeStyle='rgba(255,255,255,0.06)';x.lineWidth=1;x.stroke();
 
-  // Big count
-  x.save();x.shadowColor=pr>=.9?'#88ffaa':'#ffd060';x.shadowBlur=14;
-  x.font='bold 26px Cinzel,serif';x.fillStyle=pr>=.9?'#aaffcc':'#ffd77a';
-  x.fillText(got+'',hx0+36,hy+42);x.restore();
-  const gw=x.measureText(got+'').width;
-  x.fillStyle='rgba(255,255,255,.28)';x.font='bold 17px Cinzel,serif';x.fillText('/ 20',hx0+44+gw,hy+40);
-
-  // Dawn Progress Bar
-  const bx=hx0+10,by2=hy+hh2-15,bw=hw-20,bh=8;
-  x.fillStyle='rgba(255,255,255,.09)';x.beginPath();x.roundRect(bx,by2,bw,bh,4);x.fill();
+  // Gradient progress fill
   if(dawnCyclePr>0){
     const pg=x.createLinearGradient(bx,by2,bx+bw,by2);
-    pg.addColorStop(0,`hsl(${mix(45,140,dawnCyclePr)},100%,60%)`);
-    pg.addColorStop(1,`hsl(${mix(55,300,dawnCyclePr)},100%,72%)`);
-    x.fillStyle=pg;x.beginPath();x.roundRect(bx,by2,Math.max(bh,bw*dawnCyclePr),bh,4);x.fill();
-    x.save();x.globalCompositeOperation='lighter';glow(x,bx+bw*dawnCyclePr,by2+bh/2,13,'rgba(255,235,100,A)',.85);x.restore();
+    pg.addColorStop(0,`hsl(${mix(45,150,dawnCyclePr)},100%,62%)`);
+    pg.addColorStop(1,`hsl(${mix(55,290,dawnCyclePr)},100%,72%)`);
+    x.fillStyle=pg;
+    const curW=Math.max(bh,bw*dawnCyclePr);
+    x.beginPath();x.roundRect(bx,by2,curW,bh,3);x.fill();
+
+    // Sparkle head at current progress
+    x.save();x.globalCompositeOperation='lighter';
+    glow(x,bx+curW,by2+bh/2,11,'rgba(255,245,130,A)',0.9);
+    x.restore();
   }
-  for(let m=1;m<=3;m++){const mx3=bx+bw*(m/4);x.fillStyle='rgba(255,255,255,.2)';x.fillRect(mx3-.5,by2,1,bh)}
+
+  // Subtle pip marks for 25%, 50%, 75%
+  for(let m=1;m<=3;m++){
+    const mx3=bx+bw*(m/4);
+    x.fillStyle='rgba(255,255,255,0.18)';
+    x.fillRect(mx3-0.5,by2,1,bh);
+  }
 
   // Difficulty stars (bottom-right)
   const stars=Math.min(5,Math.ceil(diffPr*5));
