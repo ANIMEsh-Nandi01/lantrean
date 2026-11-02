@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lantern Sprite</title>
@@ -190,8 +190,34 @@ function draw(){
   for(let i=0;i<3;i++)heart(36+i*34,34,16,i<p.hp);
   x.fillStyle='rgba(10,14,50,.7)';x.strokeStyle='#ffd77a';x.lineWidth=1.5;x.beginPath();x.arc(36,70,13,0,7);x.fill();x.stroke();
   for(let i=0;i<5;i++){const v=Math.max(0,Math.min(1,en*5-i));x.fillStyle='rgba(255,255,255,.15)';x.fillRect(58+i*20,63,17,14);x.fillStyle=i<4?'#ffd77a':'#9fe6ff';x.fillRect(58+i*20,63,17*v,14)}
-  x.font='600 20px Cinzel,Georgia,serif';x.textAlign='right';x.fillStyle='#ffd77a';x.fillText('\u00d7 '+got+' / '+GOAL,W-20,38);
-  x.fillStyle='rgba(255,255,255,.15)';x.fillRect(W-170,50,150,6);x.fillStyle=`hsl(${mix(45,330,pr)},90%,65%)`;x.fillRect(W-170,50,150*pr,6)}
+  // ── Top-right firefly HUD panel ──
+   const hw=212,hh2=72,hr=14,hx0=W-hw-14,hy=12;
+   x.save();x.shadowColor='rgba(255,185,50,.6)';x.shadowBlur=24;
+   x.beginPath();x.roundRect(hx0,hy,hw,hh2,hr);
+   x.fillStyle='rgba(5,7,36,.84)';x.fill();
+   x.strokeStyle='rgba(255,215,122,.52)';x.lineWidth=1.5;x.stroke();
+   x.restore();
+   const shimG=x.createLinearGradient(hx0,hy,hx0+hw,hy);
+   shimG.addColorStop(0,'rgba(255,220,100,0)');shimG.addColorStop(.5,'rgba(255,220,100,.6)');shimG.addColorStop(1,'rgba(255,220,100,0)');
+   x.strokeStyle=shimG;x.lineWidth=1;x.beginPath();x.moveTo(hx0+hr,hy+1);x.lineTo(hx0+hw-hr,hy+1);x.stroke();
+   x.save();x.globalCompositeOperation='lighter';glow(x,hx0+20,hy+22,20,'rgba(255,220,80,A)',.95);x.restore();
+   x.fillStyle='#fffbe0';x.beginPath();x.arc(hx0+20,hy+22,4.5,0,7);x.fill();
+   x.save();x.globalAlpha=.5;x.fillStyle='rgba(180,240,255,.85)';
+   x.beginPath();x.ellipse(hx0+14,hy+19,5,2.5,-.6,0,7);x.fill();
+   x.beginPath();x.ellipse(hx0+27,hy+19,5,2.5,.6,0,7);x.fill();
+   x.restore();
+   x.font='500 9.5px Cinzel,Georgia,serif';x.textAlign='left';x.fillStyle='rgba(190,215,255,.7)';x.fillText('FIREFLIES',hx0+36,hy+15);
+   x.save();x.shadowColor=got>=GOAL?'#88ffaa':'#ffd060';x.shadowBlur=14;
+   x.font='bold 26px Cinzel,Georgia,serif';x.fillStyle=got>=GOAL?'#aaffcc':'#ffd77a';x.fillText(got+'',hx0+36,hy+42);x.restore();
+   const gw=x.measureText(got+'').width;
+   x.fillStyle='rgba(255,255,255,.28)';x.font='bold 17px Cinzel,serif';x.fillText('/',hx0+42+gw,hy+40);
+   x.fillStyle='rgba(200,220,255,.52)';x.font='bold 17px Cinzel,serif';x.fillText(GOAL,hx0+54+gw,hy+40);
+   const bx=hx0+10,by=hy+hh2-15,bw=hw-20,bh=8;
+   x.fillStyle='rgba(255,255,255,.09)';x.beginPath();x.roundRect(bx,by,bw,bh,4);x.fill();
+   x.strokeStyle='rgba(255,255,255,.08)';x.lineWidth=1;x.beginPath();x.roundRect(bx,by,bw,bh,4);x.stroke();
+   if(pr>0){const pg=x.createLinearGradient(bx,by,bx+bw,by);pg.addColorStop(0,'hsl('+mix(48,160,pr)+',100%,60%)');pg.addColorStop(1,'hsl('+mix(55,280,pr)+',100%,72%)');x.fillStyle=pg;x.beginPath();x.roundRect(bx,by,Math.max(bh,bw*pr),bh,4);x.fill();x.save();x.globalCompositeOperation='lighter';glow(x,bx+bw*pr,by+bh/2,13,'rgba(255,235,100,A)',.9);x.restore()}
+   for(let m=1;m<=3;m++){const mx=bx+bw*(m/4);x.fillStyle='rgba(255,255,255,.2)';x.fillRect(mx-.5,by,1,bh)}
+   }
 }
 let last=0;
 function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;up(dt);draw();requestAnimationFrame(loop)}
