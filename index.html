@@ -871,34 +871,78 @@ function heart(hx,hy,s,on){
 function drawHUD(){
   const pr=getEnvLight();
 
-  // Score top-center
+  // Responsive layout measurements
+  const isMobile = W < 600;
+  const isSmallMobile = W < 420;
+
+  // Score display: if mobile, position cleanly without colliding
   x.save();x.shadowColor='rgba(255,210,80,.75)';x.shadowBlur=20;
-  x.font='bold 34px Cinzel,serif';x.textAlign='center';x.fillStyle='#ffd77a';
-  x.fillText(Math.round(scoreDisp).toLocaleString(),W/2,44);
+  x.font=isSmallMobile?'bold 24px Cinzel,serif':(isMobile?'bold 28px Cinzel,serif':'bold 34px Cinzel,serif');
+  x.textAlign='center';x.fillStyle='#ffd77a';
+  const scoreY = isMobile ? 36 : 44;
+  x.fillText(Math.round(scoreDisp).toLocaleString(), W/2, scoreY);
   x.restore();
-  x.font='500 11px Cinzel,serif';x.textAlign='center';x.fillStyle='rgba(185,215,255,.6)';
-  x.fillText((worldX/1000).toFixed(2)+' km',W/2,60);
+
+  x.font=isMobile?'500 9.5px Cinzel,serif':'500 11px Cinzel,serif';
+  x.textAlign='center';x.fillStyle='rgba(185,215,255,.6)';
+  x.fillText((worldX/1000).toFixed(2)+' km', W/2, scoreY + (isMobile ? 13 : 16));
 
   // Biome name
   const[b0,,bl]=getBiomes();
-  x.font='italic 10.5px Cinzel,serif';x.textAlign='center';
+  x.font='italic 9.5px Cinzel,serif';x.textAlign='center';
   x.fillStyle=`rgba(220,200,255,${.35+bl*.15})`;
-  x.fillText(b0.name.toUpperCase(),W/2,76);
+  x.fillText(b0.name.toUpperCase(), W/2, scoreY + (isMobile ? 26 : 32));
 
-  // Left: hearts + burst arc + energy slots
-  for(let i=0;i<3;i++)heart(36+i*34,34,16,i<hp);
-  const bpct=1-Math.min(1,burstCd/4.5);
-  x.strokeStyle=bpct>=1?'rgba(255,200,80,.88)':'rgba(255,255,255,.22)';x.lineWidth=2.5;
-  x.beginPath();x.arc(36,70,13,-.5*Math.PI,-.5*Math.PI+bpct*Math.PI*2);x.stroke();
-  if(bpct<1){x.font='7px Cinzel,serif';x.textAlign='center';x.fillStyle='rgba(200,200,200,.5)';x.fillText('BURST',36,73)}
-  for(let i=0;i<5;i++){
-    const v=Math.max(0,Math.min(1,en*5-i));
-    x.fillStyle='rgba(255,255,255,.12)';x.fillRect(58+i*20,63,17,14);
-    x.fillStyle=i<4?'#ffd77a':'#9fe6ff';x.fillRect(58+i*20,63,17*v,14);
+  // ── Left: Hearts, Burst arc & Energy meter (Responsive) ──
+  const heartScale = isMobile ? 12 : 16;
+  const heartSpacing = isMobile ? 24 : 34;
+  const heartStartX = isMobile ? 20 : 36;
+  const heartY = isMobile ? 22 : 34;
+
+  for(let i=0;i<3;i++){
+    heart(heartStartX + i * heartSpacing, heartY, heartScale, i < hp);
   }
 
-  // Right: Firefly & Dawn Progress HUD Panel
-  const hw=200,hh2=66,hr=16,hx0=W-hw-16,hy=14;
+  // Burst arc & Energy slot bar
+  const burstCenterX = heartStartX;
+  const burstCenterY = isMobile ? 48 : 70;
+  const burstRadius = isMobile ? 9 : 13;
+  const bpct = 1 - Math.min(1, burstCd / 4.5);
+
+  x.strokeStyle = bpct >= 1 ? 'rgba(255,200,80,.88)' : 'rgba(255,255,255,.22)';
+  x.lineWidth = isMobile ? 2 : 2.5;
+  x.beginPath();
+  x.arc(burstCenterX, burstCenterY, burstRadius, -.5 * Math.PI, -.5 * Math.PI + bpct * Math.PI * 2);
+  x.stroke();
+
+  if(bpct < 1){
+    x.font = isMobile ? '5.5px Cinzel,serif' : '7px Cinzel,serif';
+    x.textAlign = 'center';
+    x.fillStyle = 'rgba(200,200,200,.6)';
+    x.fillText('BURST', burstCenterX, burstCenterY + (isMobile ? 2 : 3));
+  }
+
+  // Energy slots
+  const slotW = isMobile ? 11 : 17;
+  const slotH = isMobile ? 9 : 14;
+  const slotGap = isMobile ? 13 : 20;
+  const slotStartX = burstCenterX + burstRadius + (isMobile ? 8 : 12);
+  const slotStartY = burstCenterY - slotH / 2;
+
+  for(let i=0;i<5;i++){
+    const v = Math.max(0, Math.min(1, en * 5 - i));
+    x.fillStyle = 'rgba(255,255,255,.12)';
+    x.fillRect(slotStartX + i * slotGap, slotStartY, slotW, slotH);
+    x.fillStyle = i < 4 ? '#ffd77a' : '#9fe6ff';
+    x.fillRect(slotStartX + i * slotGap, slotStartY, slotW * v, slotH);
+  }
+
+  // ── Right: Firefly HUD Card (Fully Responsive & Non-Overlapping) ──
+  const hw = isSmallMobile ? 128 : (isMobile ? 148 : 200);
+  const hh2 = isSmallMobile ? 48 : (isMobile ? 54 : 66);
+  const hr = isMobile ? 12 : 16;
+  const hx0 = W - hw - (isMobile ? 10 : 16);
+  const hy = isMobile ? 10 : 14;
   
   // Outer subtle dark drop glow
   x.save();
@@ -932,49 +976,62 @@ function drawHUD(){
   x.strokeStyle=shimG;x.lineWidth=1.5;x.beginPath();x.moveTo(hx0+hr,hy+1.5);x.lineTo(hx0+hw-hr,hy+1.5);x.stroke();
 
   // Glowing animated Firefly orb icon
-  const iconPulse=Math.sin(gTime*3.5)*1.5;
+  const iconPulse = Math.sin(gTime*3.5)*1.2;
+  const iconX = hx0 + (isSmallMobile ? 15 : (isMobile ? 18 : 22));
+  const iconY = hy + (isSmallMobile ? 16 : (isMobile ? 19 : 24));
+  const iconGlowR = (isSmallMobile ? 14 : (isMobile ? 16 : 20)) + iconPulse;
+  const iconCoreR = isSmallMobile ? 3.5 : (isMobile ? 4 : 4.5);
+
   x.save();x.globalCompositeOperation='lighter';
-  glow(x,hx0+22,hy+24,20+iconPulse,'rgba(255,220,90,A)',0.95);
+  glow(x, iconX, iconY, iconGlowR, 'rgba(255,220,90,A)', 0.95);
   x.restore();
   
   // Firefly golden core
-  x.fillStyle='#fffce6';x.beginPath();x.arc(hx0+22,hy+24,4.5,0,7);x.fill();
+  x.fillStyle='#fffce6';x.beginPath();x.arc(iconX, iconY, iconCoreR, 0, 7);x.fill();
   
   // Translucent wings flutter
   x.save();x.globalAlpha=0.65;x.fillStyle='rgba(195,245,255,0.9)';
-  const wingFlap=Math.sin(gTime*24)*1.8;
-  x.beginPath();x.ellipse(hx0+16,hy+21+wingFlap*0.4,5.2,2.6,-0.55+wingFlap*0.08,0,7);x.fill();
-  x.beginPath();x.ellipse(hx0+28,hy+21-wingFlap*0.4,5.2,2.6,0.55-wingFlap*0.08,0,7);x.fill();
+  const wingFlap = Math.sin(gTime*24)*1.8;
+  const wingW = isSmallMobile ? 4 : 5.2;
+  const wingH = isSmallMobile ? 2 : 2.6;
+  x.beginPath();x.ellipse(iconX - (isSmallMobile ? 4.5 : 6), iconY - 2.5 + wingFlap*0.4, wingW, wingH, -0.55+wingFlap*0.08, 0, 7);x.fill();
+  x.beginPath();x.ellipse(iconX + (isSmallMobile ? 4.5 : 6), iconY - 2.5 - wingFlap*0.4, wingW, wingH, 0.55-wingFlap*0.08, 0, 7);x.fill();
   x.restore();
 
   // Section Label: "FIREFLIES"
-  x.font='600 9.5px Cinzel,serif';x.textAlign='left';x.fillStyle='rgba(195,220,255,0.75)';
-  x.letterSpacing='0.08em';
-  x.fillText('FIREFLIES',hx0+38,hy+16);
+  const textLeftX = iconX + (isSmallMobile ? 12 : (isMobile ? 14 : 17));
+  x.font = isSmallMobile ? '600 7.5px Cinzel,serif' : (isMobile ? '600 8.5px Cinzel,serif' : '600 9.5px Cinzel,serif');
+  x.textAlign = 'left';x.fillStyle = 'rgba(195,220,255,0.75)';
+  x.letterSpacing = '0.06em';
+  x.fillText('FIREFLIES', textLeftX, hy + (isSmallMobile ? 13 : (isMobile ? 15 : 16)));
 
-  // Big stylized Firefly count (Clean, no /20)
+  // Big stylized Firefly count
   x.save();
-  const countColor=pr>=0.9?'#aaffcc':'#ffd77a';
-  x.shadowColor=pr>=0.9?'rgba(120,255,180,0.85)':'rgba(255,210,80,0.8)';
-  x.shadowBlur=16;
-  x.font='bold 24px Cinzel,serif';x.fillStyle=countColor;
-  x.fillText(got.toLocaleString(),hx0+38,hy+39);
+  const countColor = pr >= 0.9 ? '#aaffcc' : '#ffd77a';
+  x.shadowColor = pr >= 0.9 ? 'rgba(120,255,180,0.85)' : 'rgba(255,210,80,0.8)';
+  x.shadowBlur = isMobile ? 10 : 16;
+  x.font = isSmallMobile ? 'bold 16px Cinzel,serif' : (isMobile ? 'bold 19px Cinzel,serif' : 'bold 24px Cinzel,serif');
+  x.fillStyle = countColor;
+  x.fillText(got.toLocaleString(), textLeftX, hy + (isSmallMobile ? 29 : (isMobile ? 34 : 39)));
   x.restore();
 
-  // Subtle multiplier badge or collected icon tag next to number
+  // Multiplier badge
   if(powers.multi>0){
     x.save();
-    x.font='bold 10px Cinzel,serif';
-    x.fillStyle='#cf9fff';
-    x.shadowColor='#cf9fff';x.shadowBlur=8;
-    const numW=x.measureText(got.toLocaleString()).width;
-    x.fillText('2×',hx0+44+numW,hy+36);
+    x.font = isSmallMobile ? 'bold 8px Cinzel,serif' : 'bold 10px Cinzel,serif';
+    x.fillStyle = '#cf9fff';
+    x.shadowColor = '#cf9fff';x.shadowBlur = 8;
+    const numW = x.measureText(got.toLocaleString()).width;
+    x.fillText('2×', textLeftX + numW + 4, hy + (isSmallMobile ? 27 : (isMobile ? 31 : 36)));
     x.restore();
   }
 
   // Smooth Dawn Progress Fill Bar
   const dawnCyclePr=(got%20)/20;
-  const bx=hx0+12,by2=hy+hh2-14,bw=hw-24,bh=6;
+  const bx = hx0 + (isSmallMobile ? 8 : (isMobile ? 10 : 12));
+  const bh = isSmallMobile ? 4 : (isMobile ? 5 : 6);
+  const by2 = hy + hh2 - (isSmallMobile ? 9 : (isMobile ? 11 : 14));
+  const bw = hw - (isSmallMobile ? 16 : (isMobile ? 20 : 24));
   
   // Bar track background
   x.fillStyle='rgba(255,255,255,0.08)';
